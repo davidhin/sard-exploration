@@ -48,17 +48,3 @@ for child in tqdm(root):
         }
     )
 df = pd.DataFrame.from_records(test_id_flaws)
-
-# %% Read SySeVR TCs
-tree = ET.parse(vde.external_dir() / "SARD_testcaseinfo.xml")
-root = tree.getroot()
-sysevr_testids = []
-for child in tqdm(root):
-    sysevr_testids.append(child.attrib["id"])
-
-# %% Get CWEs
-df_sysevr = df[df.testid.isin(sysevr_testids)]
-cwe_counts_in_sard = pd.DataFrame(
-    Counter([j for i in df_sysevr.cwes for j in i]).items(), columns=["cwe", "counts"]
-)
-cwe_counts_in_sard.sort_values("counts")
