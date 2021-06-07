@@ -73,7 +73,7 @@ def get_sard_df():
                 "num_files_flawed": num_files_flawed,
                 "cwes": [i["name"] for i in markedlines],
                 "status": status,
-                "filepaths": unique_paths,
+                "filepaths": list(unique_paths),
             }
         )
     df = pd.DataFrame.from_records(test_id_flaws)
