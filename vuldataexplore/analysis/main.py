@@ -37,6 +37,8 @@ for child in tqdm(root):
             ]
         # FILTER: flawed/mixed lines with line_number == 0
         flaws = [i for i in flaws if i["line"] != "0"]
+        # FILTER: ignore header files
+        flaws = [i for i in flaws if i["path"][-2:] != ".h"]
         if len(flaws) > 0:
             markedlines += flaws
 
@@ -49,6 +51,9 @@ for child in tqdm(root):
     if num_fixlines > 0:
         continue
 
+    # Manually calculate number of files with marked lines
+    num_files_flawed = len(set([i["path"] for i in markedlines]))
+
     test_id_flaws.append(
         {
             "testid": testid,
@@ -58,16 +63,18 @@ for child in tqdm(root):
             "num_mixedlines": len([i for i in markedlines if i["linetag"] == "mixed"]),
             "num_fixlines": num_fixlines,
             "lang": lang,
-            "num_files": len(child.findall("./file")),
+            "num_files_total": len(child.findall("./file")),
+            "num_files_flawed": num_files_flawed,
             "cwes": [i["name"] for i in markedlines],
             "status": status,
         }
     )
 df = pd.DataFrame.from_records(test_id_flaws)
 
-df[df.testid == "91116"]
-
+df
 # %% Statistics to check
 # How spread apart the individual lines are vs hunks
 # How long each of the files are
 # Distribution of number of files
+
+"asdf.h"[-2:]
