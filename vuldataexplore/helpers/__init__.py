@@ -6,6 +6,17 @@ import vuldataexplore as vde
 from tqdm import tqdm
 
 
+def get_file_loc(filepath):
+    """Get number of non-blank lines of a file.
+
+    Args:
+        filepath (str): Path to file
+    """
+    with open(filepath, errors="ignore") as f:
+        locs = len([i for i in f.readlines() if len(i.strip()) > 0])
+    return locs
+
+
 def get_sard_df():
     """Get SARD manifest and filter accordingly."""
     tree = ET.parse(vde.external_dir() / "full_manifest.xml")
@@ -56,6 +67,11 @@ def get_sard_df():
         unique_paths = set([i["path"] for i in markedlines])
         num_files_flawed = len(unique_paths)
 
+        # Get total LOCs for files with marked lines.
+        locs = [
+            get_file_loc(vde.external_dir() / "testcases" / i) for i in unique_paths
+        ]
+
         test_id_flaws.append(
             {
                 "testid": testid,
@@ -74,6 +90,7 @@ def get_sard_df():
                 "cwes": [i["name"] for i in markedlines],
                 "status": status,
                 "filepaths": list(unique_paths),
+                "linesofcode": sum(locs),
             }
         )
     df = pd.DataFrame.from_records(test_id_flaws)
