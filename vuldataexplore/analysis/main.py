@@ -15,6 +15,8 @@ for child in tqdm(root):
     testid = child.attrib["id"]
     lang = child.attrib["language"]
     num_files = child.attrib["numberOfFiles"]
+
+    # FILTER: Programming language
     if lang not in ["C", "C++"]:
         continue
 
@@ -29,11 +31,12 @@ for child in tqdm(root):
                     **{"linetag": fileline.tag},
                 }
             ]
+        # FILTER: flawed/mixed lines with line_number == 0
         flaws = [i for i in flaws if i["line"] != 0]
         if len(flaws) > 0:
             suslines += flaws
 
-    # Filter with at least one line
+    # FILTER: At least one flawed/mixed line
     if len(suslines) == 0:
         continue
 
