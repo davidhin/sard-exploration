@@ -30,10 +30,14 @@ cwe_df["total"] = 1
 cwe_df = cwe_df.groupby("cwe").count().sort_values("total", ascending=0)
 
 # %% Markdown Tables
-nfile_flaws.to_markdown()
-nfile_total.to_markdown()
-cwe_df.head(10).to_markdown()
-cwe_df.to_markdown()
+nfile_flaws.to_markdown(
+    vde.outputs_dir() / "nfile_flaws.md", tablefmt="github", index=0
+)
+nfile_total.to_markdown(
+    vde.outputs_dir() / "nfile_total.md", tablefmt="github", index=0
+)
+cwe_df.head(10).to_markdown(vde.outputs_dir() / "cwe_df_top10.md", tablefmt="github")
+cwe_df.to_markdown(vde.outputs_dir() / "cwe_df_all.md", tablefmt="github")
 
 # --- Ideas ---
 # How spread apart the individual lines are vs hunks
