@@ -130,4 +130,4 @@ def get_sard_df(maxlocs=1000, maxmark=15, verbose=0):
         printstr += f"Removed tests with >={maxmark} marked lines: {count_linenofilter}"
         print(printstr)
 
-    return df
+    return fdf
