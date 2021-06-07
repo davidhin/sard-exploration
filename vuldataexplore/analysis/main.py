@@ -32,7 +32,7 @@ for child in tqdm(root):
                 }
             ]
         # FILTER: flawed/mixed lines with line_number == 0
-        flaws = [i for i in flaws if i["line"] != 0]
+        flaws = [i for i in flaws if i["line"] != "0"]
         if len(flaws) > 0:
             suslines += flaws
 
