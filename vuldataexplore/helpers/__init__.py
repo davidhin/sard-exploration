@@ -53,7 +53,8 @@ def get_sard_df():
             continue
 
         # Manually calculate number of files with marked lines
-        num_files_flawed = len(set([i["path"] for i in markedlines]))
+        unique_paths = set([i["path"] for i in markedlines])
+        num_files_flawed = len(unique_paths)
 
         test_id_flaws.append(
             {
@@ -72,6 +73,7 @@ def get_sard_df():
                 "num_files_flawed": num_files_flawed,
                 "cwes": [i["name"] for i in markedlines],
                 "status": status,
+                "filepaths": unique_paths,
             }
         )
     df = pd.DataFrame.from_records(test_id_flaws)
