@@ -1,27 +1,64 @@
 # %%
 import xml.etree.ElementTree as ET
+from collections import Counter
 
 import pandas as pd
+import vuldataexplore as vde
 from tqdm import tqdm
 
-# %%
-tree = ET.parse("SARD_testcaseinfo.xml")
+tree = ET.parse(vde.external_dir() / "full_manifest.xml")
 root = tree.getroot()
 
 # %%
 test_id_flaws = []
 for child in tqdm(root):
     testid = child.attrib["id"]
-    flaws = [i.attrib for i in child.findall("./file/flaw")]
-    test_id_flaws.append([testid, flaws, len(flaws)])
+    lang = child.attrib["language"]
+    num_files = child.attrib["numberOfFiles"]
+    if lang not in ["C", "C++"]:
+        continue
 
-# %%
-df = pd.DataFrame(test_id_flaws, columns=["testid", "flaws", "numflaws"])
+    suslines = []
+    for testcasefile in child.findall("./file"):
+        flaws = []
+        for fileline in testcasefile:
+            flaws += [
+                {
+                    **testcasefile.attrib,
+                    **fileline.attrib,
+                    **{"linetag": fileline.tag},
+                }
+            ]
+        flaws = [i for i in flaws if i["line"] != 0]
+        if len(flaws) > 0:
+            suslines += flaws
 
-# %%
+    # Filter with at least one line
+    if len(suslines) == 0:
+        continue
 
-df.sort_values("numflaws")
-# %%
-df[df["testid"] == "187"]["numflaws"]
+    test_id_flaws.append(
+        {
+            "testid": testid,
+            "files": suslines,
+            "num_suslines": len(suslines),
+            "lang": lang,
+            "num_files": num_files,
+            "cwes": [i["name"] for i in suslines],
+        }
+    )
+df = pd.DataFrame.from_records(test_id_flaws)
 
-df[df["testid"] == "187"]["flaws"]
+# %% Read SySeVR TCs
+tree = ET.parse(vde.external_dir() / "SARD_testcaseinfo.xml")
+root = tree.getroot()
+sysevr_testids = []
+for child in tqdm(root):
+    sysevr_testids.append(child.attrib["id"])
+
+# %% Get CWEs
+df_sysevr = df[df.testid.isin(sysevr_testids)]
+cwe_counts_in_sard = pd.DataFrame(
+    Counter([j for i in df_sysevr.cwes for j in i]).items(), columns=["cwe", "counts"]
+)
+cwe_counts_in_sard.sort_values("counts")
