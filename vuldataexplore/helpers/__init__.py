@@ -17,11 +17,23 @@ def get_file_loc(filepath):
     return locs
 
 
-def get_sard_df():
-    """Get SARD manifest and filter accordingly."""
+def get_sard_df(maxlocs=1000, maxmark=15, verbose=0):
+    """Get SARD manifest and filter accordingly.
+
+    Args:
+        maxlocs (int, optional): Filter all test cases with more LOCs than this. Defaults to 1000.
+        maxmark (int, optional): Filter all test cases with more marked lines than this. Defaults to 15.
+        verbose (int, optional): Verbosity. Defaults to 0.
+    """
     tree = ET.parse(vde.external_dir() / "full_manifest.xml")
     root = tree.getroot()
     test_id_flaws = []
+    count_sard_total = len(root)
+    count_deprecated = 0
+    count_lang = 0
+    count_nomarked = 0
+    count_hasfix = 0
+
     for child in tqdm(root):
         status = child.attrib["status"]
         testid = child.attrib["id"]
@@ -29,10 +41,12 @@ def get_sard_df():
 
         # FILTER: Deprecated
         if status == "Deprecated":
+            count_deprecated += 1
             continue
 
         # FILTER: Programming language
         if lang not in ["C", "C++"]:
+            count_lang += 1
             continue
 
         # Extract list of flawed/mixed lines.
@@ -56,11 +70,13 @@ def get_sard_df():
 
         # FILTER: At least one flawed/mixed line
         if len(markedlines) == 0:
+            count_nomarked += 1
             continue
 
         # FILTER: No fixlines (good cases)
         num_fixlines = len([i for i in markedlines if i["linetag"] == "fix"])
         if num_fixlines > 0:
+            count_hasfix += 1
             continue
 
         # Manually calculate number of files with marked lines
@@ -94,4 +110,24 @@ def get_sard_df():
             }
         )
     df = pd.DataFrame.from_records(test_id_flaws)
+    fdf = df[df.linesofcode < maxlocs]
+    count_locfilter = len(fdf)
+    fdf = fdf[fdf.num_markedlines < maxmark]
+    count_linenofilter = len(fdf)
+
+    if verbose > 0:
+        printstr = ""
+        printstr += f"SARD Total: {count_sard_total}\n"
+        count_sard_total -= count_deprecated
+        printstr += f"Removed deprecated: {count_sard_total}\n"
+        count_sard_total -= count_lang
+        printstr += f"Removed non-C/C++: {count_sard_total}\n"
+        count_sard_total -= count_nomarked
+        printstr += f"Removed tests with no marked lines: {count_sard_total}\n"
+        count_sard_total -= count_hasfix
+        printstr += f"Removed tests with fixed lines (good cases): {count_sard_total}\n"
+        printstr += f"Removed tests with > {maxlocs} loc: {count_locfilter}\n"
+        printstr += f"Removed tests with >={maxmark} marked lines: {count_linenofilter}"
+        print(printstr)
+
     return df
